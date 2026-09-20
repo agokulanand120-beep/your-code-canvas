@@ -1,0 +1,285 @@
+import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerPagination } from "@/hooks/useServerPagination";
+import ScrollLoader from "@/components/ScrollLoader";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDebounce } from "@/hooks/useDebounce";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Search, Eye, Loader2 } from "lucide-react";
+import DataDialog from "@/components/DataDialog";
+import { formatIndianNumber, formatCurrency } from "@/lib/formatters";
+import ViewToggle from "@/components/ViewToggle";
+import { useViewMode } from "@/hooks/useViewMode";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
+
+type Payment = Database["public"]["Tables"]["payments"]["Row"];
+type PaymentInsert = Database["public"]["Tables"]["payments"]["Insert"];
+
+const paymentModes = ["cash", "bank_transfer", "cheque", "upi", "card"] as const;
+const paymentTypes = ["customer_payment", "vendor_payment", "emi_payment", "expense"] as const;
+
+const Payments = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { viewMode, setViewMode } = useViewMode("payments");
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 150);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<Partial<PaymentInsert>>({ amount: 0, payment_mode: "cash", payment_type: "customer_payment" });
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState<string>("all");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+
+  // Server-side paginated display
+  const { items: payments, isLoading: loading, hasMore: hasMorePayments, loaderRef: paymentsLoaderRef, invalidate: invalidatePayments } = useServerPagination<Payment>({
+    queryKey: ['payments-display', userId, debouncedSearch, filterType, fromDate, toDate],
+    fetchFn: async ({ from, to }) => {
+      let query = supabase.from("payments").select("id, payment_number, amount, payment_type, payment_mode, payment_date, effective_date, payment_purpose, description, reference_id, reference_type, customer_id, vendor_id, principal_amount, interest_amount, profit_amount, user_id, created_at").eq("user_id", userId!);
+      if (filterType !== "all") query = query.eq("payment_type", filterType as any);
+      if (fromDate) query = query.gte("payment_date", fromDate);
+      if (toDate) query = query.lte("payment_date", toDate);
+      if (debouncedSearch) query = query.ilike("payment_number", `%${debouncedSearch}%`);
+      const { data } = await query.order("created_at", { ascending: false }).range(from, to);
+      return (data || []) as Payment[];
+    },
+    enabled: !!userId,
+  });
+
+  const displayedPayments = payments;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    try {
+      const { error } = await supabase.from("payments").insert([{ ...formData, payment_number: `PAY${Date.now().toString(36).toUpperCase()}`, user_id: userId } as PaymentInsert]);
+      if (error) throw error;
+      toast({ title: "Payment recorded successfully" });
+      setDialogOpen(false);
+      invalidatePayments();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const getPaymentTypeBadge = (type: string) => {
+  switch (type) {
+    case "customer_payment":
+      return "bg-green-100 text-green-700 border border-green-200";
+    case "emi_payment":
+      return "bg-purple-100 text-purple-700 border border-purple-200";
+    case "vendor_payment":
+      return "bg-blue-100 text-blue-700 border border-blue-200";
+    case "expense":
+      return "bg-red-100 text-red-700 border border-red-200";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+};
+
+  const hasLoadedOnce = useRef(false);
+  useEffect(() => { if (!loading) hasLoadedOnce.current = true; }, [loading]);
+
+  if (loading && !hasLoadedOnce.current) {
+    return <PageSkeleton />;
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex justify-between gap-4">
+        <div><h1 className="text-3xl font-bold">Payments</h1><p className="text-muted-foreground">Track all payments</p></div>
+         
+  <div className="flex items-center gap-2 relative">
+  {/* Filter Button */}
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => setShowFilters(v => !v)}
+    className="gap-1"
+  >
+    Filter
+  </Button>
+
+  {/* Ledger Info */}
+  <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-sm text-blue-700 border border-blue-200">
+    <span className="h-2 w-2 rounded-full bg-blue-600" />
+    Auto-generated payment ledger
+  </div>
+
+  {/* Filter Panel */}
+  {showFilters && (
+    <div className="absolute right-0 top-10 z-50 w-72 rounded-xl border bg-card shadow-lg p-4 space-y-3">
+      {/* Payment Type */}
+      <div className="space-y-1">
+        <Label className="text-xs">Payment Type</Label>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger>
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {paymentTypes.map(t => (
+              <SelectItem key={t} value={t} className="capitalize">
+                {t.replace("_", " ")}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Date Range */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">From</Label>
+          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">To</Label>
+          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2 pt-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setFilterType("all");
+            setFromDate("");
+            setToDate("");
+          }}
+        >
+          Reset
+        </Button>
+        <Button size="sm" onClick={() => setShowFilters(false)}>
+          Apply
+        </Button>
+      </div>
+    </div>
+  )}
+</div>
+
+      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CardTitle>Payment List ({payments.length}{hasMorePayments ? "+" : ""})</CardTitle>
+            {loading && hasLoadedOnce.current && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {viewMode === "list" ? (
+          <Table>
+            <TableHeader><TableRow><TableHead>Number</TableHead><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Mode</TableHead><TableHead>Amount</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {displayedPayments.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-mono">{p.payment_number}</TableCell>
+                  <TableCell>{format(new Date(p.payment_date), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="space-y-1">
+                    <Badge className={getPaymentTypeBadge(p.payment_type)}>{p.payment_type.replace("_", " ")}</Badge>
+                    {p.payment_purpose && (
+                      <div className="text-[11px] text-muted-foreground capitalize">{p.payment_purpose.replace("_", " ")}</div>
+                    )}
+                  </TableCell>
+                  <TableCell className="capitalize">{p.payment_mode.replace("_", " ")}</TableCell>
+                  <TableCell className="font-bold">{formatCurrency(p.amount)}</TableCell>
+                  <TableCell>
+                    <Button size="icon" variant="ghost" onClick={() => setSelectedPayment(p)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {displayedPayments.map((p) => (
+              <Card key={p.id} className="border border-border hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedPayment(p)}>
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-muted-foreground">{p.payment_number}</span>
+                    <Badge className={getPaymentTypeBadge(p.payment_type) + " text-xs"}>{p.payment_type.replace("_", " ")}</Badge>
+                  </div>
+                  <p className="font-bold text-lg">{formatCurrency(p.amount)}</p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="capitalize">{p.payment_mode.replace("_", " ")}</span>
+                    <span>{format(new Date(p.payment_date), "dd MMM yyyy")}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {payments.length === 0 && !loading && (
+              <div className="col-span-full text-center py-8 text-muted-foreground">No payments found</div>
+            )}
+          </div>
+          )}
+          <ScrollLoader ref={paymentsLoaderRef} hasMore={hasMorePayments} />
+        </CardContent>
+      </Card>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Payment</DialogTitle></DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Amount *</Label><Input type="number" value={formData.amount || ""} onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })} required /></div>
+              <div className="space-y-2"><Label>Payment Type</Label><Select value={formData.payment_type} onValueChange={(v) => setFormData({ ...formData, payment_type: v as any })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{paymentTypes.map((t) => <SelectItem key={t} value={t} className="capitalize">{t.replace("_", " ")}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-2"><Label>Payment Mode</Label><Select value={formData.payment_mode} onValueChange={(v) => setFormData({ ...formData, payment_mode: v as any })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{paymentModes.map((m) => <SelectItem key={m} value={m} className="capitalize">{m.replace("_", " ")}</SelectItem>)}</SelectContent></Select></div>
+            </div>
+            <div className="space-y-2"><Label>Description</Label><Textarea value={formData.description || ""} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
+            <DialogFooter><Button type="submit">Add Payment</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <DataDialog
+        open={!!selectedPayment}
+        onOpenChange={(open) => { if (!open) setSelectedPayment(null); }}
+        title="Payment Breakdown"
+      >
+        {selectedPayment && (
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Payment Number</span><span className="font-mono font-medium">{selectedPayment.payment_number}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Total Amount</span><span className="font-bold text-lg">{formatCurrency(selectedPayment.amount)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Payment Type</span><Badge className={getPaymentTypeBadge(selectedPayment.payment_type)}>{selectedPayment.payment_type.replace("_", " ")}</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Payment Mode</span><span className="capitalize font-medium">{selectedPayment.payment_mode.replace("_", " ")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Payment Date</span><span className="font-medium">{format(new Date(selectedPayment.payment_date), "dd MMM yyyy")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Recorded At</span><span className="font-medium">{new Date(selectedPayment.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })} IST</span></div>
+            {selectedPayment.payment_purpose && (<div className="flex justify-between"><span className="text-muted-foreground">Purpose</span><span className="capitalize font-medium">{selectedPayment.payment_purpose.replace("_", " ")}</span></div>)}
+            {selectedPayment.description && (<div className="flex justify-between"><span className="text-muted-foreground">Description</span><span className="font-medium text-right max-w-[60%]">{selectedPayment.description}</span></div>)}
+            {selectedPayment.reference_type && (<div className="flex justify-between"><span className="text-muted-foreground">Linked To</span><span className="capitalize font-medium">{selectedPayment.reference_type.replace("_", " ")}</span></div>)}
+            {selectedPayment.principal_amount > 0 && (<div className="flex justify-between text-blue-600"><span>Principal</span><span>{formatCurrency(selectedPayment.principal_amount)}</span></div>)}
+            {selectedPayment.interest_amount > 0 && (<div className="flex justify-between text-green-600"><span>Interest (Unlocked)</span><span>{formatCurrency(selectedPayment.interest_amount)}</span></div>)}
+            {selectedPayment.profit_amount !== 0 && (<div className="flex justify-between text-purple-600"><span>Profit Impact</span><span>{formatCurrency(selectedPayment.profit_amount)}</span></div>)}
+            <div className="pt-2 border-t"><div className="flex justify-between text-muted-foreground"><span>Effective On</span><span>{selectedPayment.effective_date ? format(new Date(selectedPayment.effective_date), "dd MMM yyyy") : "—"}</span></div></div>
+          </div>
+        )}
+      </DataDialog>
+
+    </div>
+  );
+};
+
+export default Payments;

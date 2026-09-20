@@ -1,0 +1,2 @@
+CREATE POLICY "Admins can view all vehicles" ON public.vehicles FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role) OR is_marketplace_admin(auth.uid()));
+CREATE POLICY "Admins can view all sales" ON public.sales FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role) OR is_marketplace_admin(auth.uid()));

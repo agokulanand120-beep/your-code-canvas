@@ -1,0 +1,290 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { Wifi, WifiOff, Info, LayoutDashboard, Car, ShoppingCart, Receipt, BarChart3, Settings, Menu, UserPlus, CreditCard, ReceiptText, CalendarClock, FileText, Bell, LogOut, UsersRound, UserCircle, Store, Activity } from "lucide-react";
+import { Calculator, StickyNote, CalendarCheck } from "lucide-react";
+import EMICalculatorDialog from "@/components/EMICalculatorDialog";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import StickyNotesPanel from "@/components/StickyNotesPanel";
+import FollowUpPanel from "@/components/FollowUpPanel";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import GlobalSearch from "@/components/layout/GlobalSearch";
+import TopBarUserMenu from "@/components/layout/TopBarUserMenu";
+import TopBarCalendar from "@/components/layout/TopBarCalendar";
+import { supabase } from "@/integrations/supabase/client";
+
+const applyThemeByIndex = (index: number) => {
+  const themeColors = [
+    { sidebar: "0 0% 8%", primary: "0 0% 12%", accent: "217 91% 60%" },
+    { sidebar: "210 50% 15%", primary: "210 100% 40%", accent: "199 89% 48%" },
+    { sidebar: "150 30% 12%", primary: "142 71% 35%", accent: "142 71% 45%" },
+    { sidebar: "270 30% 15%", primary: "262 83% 48%", accent: "262 83% 58%" },
+    { sidebar: "20 30% 12%", primary: "25 95% 45%", accent: "38 92% 50%" },
+    { sidebar: "340 30% 15%", primary: "339 90% 41%", accent: "339 90% 51%" },
+    { sidebar: "240 20% 8%", primary: "240 30% 20%", accent: "221 83% 53%" },
+    { sidebar: "30 10% 12%", primary: "30 10% 25%", accent: "38 92% 50%" },
+    { sidebar: "173 50% 12%", primary: "173 80% 35%", accent: "173 80% 40%" },
+    { sidebar: "0 30% 12%", primary: "0 72% 45%", accent: "0 72% 51%" },
+    { sidebar: "245 30% 12%", primary: "245 58% 48%", accent: "245 58% 58%" },
+    { sidebar: "160 30% 10%", primary: "160 84% 35%", accent: "160 84% 39%" },
+  ];
+  const theme = themeColors[index];
+  if (!theme) return;
+  document.documentElement.style.setProperty("--sidebar-background", theme.sidebar);
+  document.documentElement.style.setProperty("--primary", theme.primary);
+  document.documentElement.style.setProperty("--chart-1", theme.accent);
+};
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, shopName, isAdmin, isLister } = useAuth();
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [emiCalcOpen, setEmiCalcOpen] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Apply saved theme — no DB call needed
+  useEffect(() => {
+    if (!user) return;
+    const savedTheme = localStorage.getItem("theme-index");
+    if (savedTheme !== null) applyThemeByIndex(Number(savedTheme));
+    const darkMode = localStorage.getItem("dark-mode") === "true";
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [user]);
+
+  // Lightweight online/offline detection — no DB polling
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Admins should never see the dealer interface — send them into the admin console.
+  useEffect(() => {
+    if (isAdmin && !location.pathname.startsWith("/admin")) {
+      navigate("/admin/vendors", { replace: true });
+    }
+  }, [isAdmin, location.pathname, navigate]);
+
+  if (!user) return null;
+  if (isAdmin && !location.pathname.startsWith("/admin")) return null;
+
+  const allBottomNavItems = [
+    { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
+    { title: "Vehicles", icon: Car, url: "/vehicles" },
+    { title: "Sales", icon: Receipt, url: "/sales" },
+  ];
+
+  const allMoreMenuItems = [
+    { title: "Customers", icon: UsersRound, url: "/customers" },
+    { title: "Vendors", icon: UserCircle, url: "/vendors" },
+    { title: "Leads", icon: UserPlus, url: "/leads" },
+    { title: "Purchases", icon: ShoppingCart, url: "/purchases" },
+    { title: "Payments", icon: CreditCard, url: "/payments" },
+    { title: "Expenses", icon: ReceiptText, url: "/expenses" },
+    { title: "EMI", icon: CalendarClock, url: "/emi" },
+    { title: "Documents", icon: FileText, url: "/documents" },
+    { title: "Reports", icon: BarChart3, url: "/reports" },
+    { title: "Catalogue Analytics", icon: BarChart3, url: "/analytics/public-page" },
+    { title: "Audit Logs", icon: Activity, url: "/audit-logs" },
+    { title: "Marketplace Hub", icon: Store, url: "/marketplace-hub" },
+    { title: "Alerts", icon: Bell, url: "/alerts" },
+    { title: "Settings", icon: Settings, url: "/settings" },
+  ];
+
+  // Lister plan → listing-only surface (vehicles, leads, marketplace, analytics, settings)
+  const listerAllowed = [
+    "/vehicles",
+    "/leads",
+    "/marketplace-hub",
+    "/analytics/public-page",
+    "/alerts",
+    "/settings",
+  ];
+  const bottomNavItems = isLister
+    ? [
+        { title: "Vehicles", icon: Car, url: "/vehicles" },
+        { title: "Leads", icon: UserPlus, url: "/leads" },
+        { title: "Marketplace", icon: Store, url: "/marketplace-hub" },
+      ]
+    : allBottomNavItems;
+  const moreMenuItems = isLister
+    ? allMoreMenuItems.filter(
+        (i) => listerAllowed.includes(i.url) && !bottomNavItems.some((b) => b.url === i.url)
+      )
+    : allMoreMenuItems;
+
+  const isActive = (url: string) => location.pathname === url;
+
+  return (
+    <SidebarProvider>
+      <div className="h-[100dvh] flex w-full bg-background overflow-hidden">
+        <div className="hidden md:block">
+          <AppSidebar />
+        </div>
+
+        <div className="flex-1 flex flex-col w-full min-w-0 h-full overflow-hidden">
+          <header className="h-14 border-b border-border bg-card/95 backdrop-blur-md flex items-center px-2 sm:px-4 md:px-6 z-[60] shadow-sm shrink-0 min-w-0 overflow-x-hidden">
+
+            {!isOnline && (
+              <div className="absolute top-14 left-0 right-0 bg-destructive/10 border-b border-destructive/20 text-destructive px-4 py-2 text-sm flex items-center gap-2">
+                <WifiOff className="h-4 w-4" />
+                <span>You're offline. Reconnect to access the platform.</span>
+              </div>
+            )}
+
+            <div className="hidden md:block shrink-0">
+              <SidebarTrigger className="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-muted active:scale-95 transition-transform" />
+            </div>
+
+            <div className="md:hidden flex items-center gap-2 shrink-0">
+              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                <Car className="h-3.5 w-3.5 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-sm text-foreground">UpcurvHub</span>
+            </div>
+
+            <div className="ml-2 sm:ml-4 flex-1 min-w-0">
+              <GlobalSearch />
+            </div>
+
+            <div className="hidden sm:flex items-center gap-0.5 mx-1 md:mx-2 border-l border-r border-border px-1.5 md:px-3 shrink-0">
+              <TopBarCalendar />
+              <button onClick={() => setFollowUpOpen(true)} className="p-1.5 md:p-2 rounded-lg hover:bg-muted transition-colors" title="Follow-ups">
+                <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button onClick={() => setNotesOpen(true)} className="p-1.5 md:p-2 rounded-lg hover:bg-muted transition-colors" title="Sticky Notes">
+                <StickyNote className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button onClick={() => setInfoOpen(true)} className="p-1.5 md:p-2 rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Platform Info">
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button onClick={() => setEmiCalcOpen(true)} className="p-1.5 md:p-2 rounded-lg hover:bg-muted transition-colors" title="EMI Calculator">
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className={`hidden xl:flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full mr-2 shrink-0 ${
+              isOnline
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : "bg-destructive/10 text-destructive"
+            }`}>
+              {isOnline ? (<><Wifi className="h-3 w-3" /> Online</>) : (<><WifiOff className="h-3 w-3" /> Offline</>)}
+            </div>
+
+            <div className="shrink-0">
+              <TopBarUserMenu shopName={shopName} userEmail={user.email} />
+            </div>
+          </header>
+
+          <main id="app-scroll-root" data-scroll-root className="flex-1 p-4 sm:p-6 pb-20 md:pb-6 overflow-x-hidden overflow-y-auto transition-[opacity] duration-200 scrollbar-hide bg-muted/30 min-h-0">
+            <div className="max-w-[1920px] mx-auto">
+              {children}
+            </div>
+          </main>
+        </div>
+
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50 pb-[env(safe-area-inset-bottom)]">
+          <div className="grid grid-cols-4 h-16">
+            {bottomNavItems.map((item) => (
+              <Link key={item.url} to={item.url} className={`flex flex-col items-center justify-center gap-0.5 ${isActive(item.url) ? "text-primary" : "text-muted-foreground"}`}>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isActive(item.url) ? "bg-primary/10" : ""}`}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-medium">{item.title}</span>
+              </Link>
+            ))}
+            <button onClick={() => setMobileMenuOpen(true)} className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground">
+              <div className="h-8 w-8 rounded-full flex items-center justify-center">
+                <Menu className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-medium">More</span>
+            </button>
+          </div>
+        </div>
+
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] overflow-y-auto">
+            <SheetHeader><SheetTitle>More Options</SheetTitle></SheetHeader>
+            <div className="grid grid-cols-4 gap-3 py-4">
+              {moreMenuItems.map((item) => (
+                <Link key={item.url} to={item.url} onClick={() => setMobileMenuOpen(false)} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-colors ${isActive(item.url) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-[10px] font-medium text-center leading-tight">{item.title}</span>
+                </Link>
+              ))}
+              <button onClick={async () => { await supabase.auth.signOut(); navigate("/auth"); }} className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-destructive hover:bg-destructive/10 transition-colors">
+                <LogOut className="h-5 w-5" />
+                <span className="text-[10px] font-medium text-center leading-tight">Logout</span>
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+          <DialogHeader><DialogTitle>Platform Usage & Guidelines</DialogTitle></DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div>
+              <h4 className="font-semibold">📌 General Usage</h4>
+              <ul className="list-disc ml-5 text-muted-foreground space-y-1">
+                <li>Keep your internet connection active for real-time sync</li>
+                <li>Avoid refreshing during form submissions</li>
+                <li>Always mark vehicles as Sold instead of deleting</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold">🚗 Inventory Best Practices</h4>
+              <ul className="list-disc ml-5 text-muted-foreground space-y-1">
+                <li>Upload clear images for better lead conversion</li>
+                <li>Do not delete sold vehicles (affects reports)</li>
+                <li>Use public page only for available stock</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold">📊 Reports & Data</h4>
+              <ul className="list-disc ml-5 text-muted-foreground space-y-1">
+                <li>Reports are calculated from sold vehicles</li>
+                <li>Deleting historical data may affect profits</li>
+                <li>Export data regularly for backup</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold">⚡ Tips</h4>
+              <ul className="list-disc ml-5 text-muted-foreground space-y-1">
+                <li>Use search & filters to manage large data</li>
+                <li>Keep vendor & customer data updated</li>
+                <li>Use notes for internal tracking</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <StickyNotesPanel open={notesOpen} onOpenChange={setNotesOpen} />
+      <FollowUpPanel open={followUpOpen} onOpenChange={setFollowUpOpen} />
+      <EMICalculatorDialog open={emiCalcOpen} onOpenChange={setEmiCalcOpen} />
+      <ScrollToTopButton />
+    </SidebarProvider>
+  );
+};
+
+export default Layout;

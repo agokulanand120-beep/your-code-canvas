@@ -1,0 +1,31 @@
+{
+  "name": "UpcurvHub - Vehicle Dealer Management",
+  "short_name": "UpcurvHub",
+  "description": "India's most trusted vehicle marketplace and dealer management system",
+  "id": "/",
+  "start_url": "/auth",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
