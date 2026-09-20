@@ -3,190 +3,29 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Sparkles, Star, Package, ShieldCheck, Search, ExternalLink, ArrowRight,
+  Sparkles, Package, ShieldCheck, Search, ArrowRight,
   Truck, BadgeIndianRupee, Wrench, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import MarketplaceTopBar from "@/components/marketplace/MarketplaceTopBar";
 import MarketplaceFooter from "@/components/marketplace/MarketplaceFooter";
-import { formatCurrency } from "@/lib/formatters";
+import ShopProductCard from "@/components/shop/ShopProductCard";
+import ShopCollections from "@/components/shop/ShopCollections";
+import { SHOP_CATEGORIES, categoryLabel, discountPct, type ShopProduct } from "@/lib/shopTypes";
 
 const CANONICAL = "https://upcurvhub.upcurv.in/shop";
 
-export interface ShopProduct {
-  id: string;
-  name: string;
-  slug: string;
-  brand: string | null;
-  category: string;
-  short_description: string | null;
-  description: string | null;
-  price: number;
-  mrp: number | null;
-  images: string[] | null;
-  highlights: string[] | null;
-  rating: number | null;
-  review_count: number | null;
-  buy_url: string;
-  merchant: string | null;
-  is_featured: boolean;
-  sort_order: number;
-}
-
-export const SHOP_CATEGORIES = [
-  { slug: "interior", label: "Interior" },
-  { slug: "exterior", label: "Exterior" },
-  { slug: "electronics", label: "Electronics" },
-  { slug: "car-care", label: "Car Care" },
-  { slug: "safety", label: "Safety" },
-  { slug: "bike", label: "Bike Gear" },
-  { slug: "tools", label: "Tools" },
-  { slug: "accessories", label: "Other" },
-];
-
-const categoryLabel = (slug: string) =>
-  SHOP_CATEGORIES.find((c) => c.slug === slug)?.label ?? slug;
-
-const discountPct = (price: number, mrp?: number | null) =>
-  mrp && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-
-const ProductCard = ({ p, onOpen }: { p: ShopProduct; onOpen: (p: ShopProduct) => void }) => {
-  const off = discountPct(Number(p.price), p.mrp ? Number(p.mrp) : null);
-  return (
-    <Card className="group h-full flex flex-col overflow-hidden border-border/60 hover:border-primary/40 hover:shadow-[0_10px_34px_-16px_hsl(var(--primary)/0.4)] transition-all">
-      <button onClick={() => onOpen(p)} className="block text-left" aria-label={p.name}>
-        <div className="relative aspect-square bg-muted overflow-hidden">
-          {p.images?.[0] ? (
-            <img
-              src={p.images[0]}
-              alt={`${p.name}${p.brand ? ` by ${p.brand}` : ""} — ${categoryLabel(p.category)}`}
-              loading="lazy" width={480} height={480}
-              className="h-full w-full object-cover group-hover:scale-[1.06] transition-transform duration-500"
-            />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center">
-              <Package className="h-10 w-10 text-muted-foreground" />
-            </div>
-          )}
-          {off > 0 && (
-            <Badge className="absolute top-2 left-2 bg-emerald-600 hover:bg-emerald-600">{off}% OFF</Badge>
-          )}
-        </div>
-      </button>
-      <CardContent className="p-3 flex flex-col gap-1.5 flex-1">
-        {p.brand && <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
-        <button onClick={() => onOpen(p)} className="text-left">
-          <p className="text-sm font-semibold line-clamp-2 min-h-[2.5rem] hover:text-primary transition-colors">{p.name}</p>
-        </button>
-        {p.rating != null && (
-          <span className="text-xs flex items-center gap-1 text-muted-foreground">
-            <span className="inline-flex items-center gap-0.5 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
-              {Number(p.rating).toFixed(1)} <Star className="h-2.5 w-2.5 fill-current" />
-            </span>
-            {!!p.review_count && `${p.review_count} ratings`}
-          </span>
-        )}
-        <div className="flex items-baseline gap-2 pt-0.5">
-          <span className="font-bold">{formatCurrency(Number(p.price))}</span>
-          {p.mrp && Number(p.mrp) > Number(p.price) && (
-            <span className="text-xs text-muted-foreground line-through">{formatCurrency(Number(p.mrp))}</span>
-          )}
-        </div>
-        <div className="mt-auto pt-1.5 grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" onClick={() => onOpen(p)}>Details</Button>
-          <Button size="sm" asChild>
-            <a href={p.buy_url} target="_blank" rel="nofollow sponsored noopener noreferrer">Buy now</a>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const ProductDialog = ({ p, onClose }: { p: ShopProduct | null; onClose: () => void }) => {
-  const [img, setImg] = useState(0);
-  useEffect(() => setImg(0), [p?.id]);
-  if (!p) return null;
-  const off = discountPct(Number(p.price), p.mrp ? Number(p.mrp) : null);
-  const images = p.images?.length ? p.images : [];
-
-  return (
-    <Dialog open={!!p} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden max-h-[92vh] overflow-y-auto">
-        <div className="grid md:grid-cols-2">
-          <div className="bg-muted">
-            <div className="aspect-square overflow-hidden">
-              {images[img] ? (
-                <img src={images[img]} alt={`${p.name} — image ${img + 1}`} className="h-full w-full object-cover" />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center"><Package className="h-12 w-12 text-muted-foreground" /></div>
-              )}
-            </div>
-            {images.length > 1 && (
-              <div className="flex gap-2 p-3 overflow-x-auto scrollbar-hide">
-                {images.map((src, i) => (
-                  <button key={i} onClick={() => setImg(i)}
-                    className={`h-14 w-14 shrink-0 rounded-lg overflow-hidden border-2 ${i === img ? "border-primary" : "border-transparent"}`}>
-                    <img src={src} alt={`${p.name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{categoryLabel(p.category)}</Badge>
-              {p.is_featured && <Badge className="gap-1"><Sparkles className="h-3 w-3" /> Top pick</Badge>}
-            </div>
-            {p.brand && <p className="text-xs uppercase tracking-wide text-muted-foreground">{p.brand}</p>}
-            <h2 className="text-xl font-bold leading-snug">{p.name}</h2>
-            {p.short_description && <p className="text-sm text-muted-foreground">{p.short_description}</p>}
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-primary">{formatCurrency(Number(p.price))}</span>
-              {p.mrp && Number(p.mrp) > Number(p.price) && (
-                <>
-                  <span className="text-sm text-muted-foreground line-through">{formatCurrency(Number(p.mrp))}</span>
-                  <span className="text-sm font-semibold text-emerald-600">{off}% off</span>
-                </>
-              )}
-            </div>
-            {!!p.highlights?.length && (
-              <ul className="space-y-1.5 pt-1">
-                {p.highlights.map((h, i) => (
-                  <li key={i} className="text-sm flex gap-2"><ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />{h}</li>
-                ))}
-              </ul>
-            )}
-            {p.description && (
-              <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{p.description}</p>
-            )}
-            <Button size="lg" className="w-full gap-2" asChild>
-              <a href={p.buy_url} target="_blank" rel="nofollow sponsored noopener noreferrer">
-                Buy now <ExternalLink className="h-4 w-4" />
-              </a>
-            </Button>
-            <p className="text-[11px] text-muted-foreground text-center">
-              Secure checkout with our verified partner store. Price and stock updated at checkout.
-            </p>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+export { SHOP_CATEGORIES };
+export type { ShopProduct };
 
 const ShopPage = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
-  const [open, setOpen] = useState<ShopProduct | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["shop-products"],
@@ -228,8 +67,8 @@ const ShopPage = () => {
   const featured = useMemo(() => products.filter((p) => p.is_featured).slice(0, 6), [products]);
 
   useEffect(() => {
-    const title = "Car & Bike Essentials Store — Top Picks at Best Prices | UpcurvHub";
-    const desc = "Hand-picked car and bike essentials — interior, exterior, electronics, care, safety and tools. Compared, reviewed and priced for Indian roads on UpcurvHub.";
+    const title = "Car & Bike Essentials — Buying Guides + Top Picks | UpcurvHub";
+    const desc = "Buying guides and hand-picked car and bike essentials — what to buy, why it matters, and where to get the best price. Curated for Indian roads on UpcurvHub.";
     document.title = title;
     const setMeta = (attr: "name" | "property", key: string, content: string) => {
       let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
@@ -253,19 +92,19 @@ const ShopPage = () => {
       <section className="relative overflow-hidden border-b bg-gradient-to-br from-primary/10 via-background to-background">
         <div className="container mx-auto px-4 py-9 md:py-14 grid md:grid-cols-[1.2fr_1fr] gap-8 items-center">
           <div>
-            <Badge variant="secondary" className="mb-3 gap-1"><Sparkles className="h-3 w-3" /> Tried, tested, top-rated</Badge>
+            <Badge variant="secondary" className="mb-3 gap-1"><Sparkles className="h-3 w-3" /> Guides, not just listings</Badge>
             <h1 className="text-2xl md:text-5xl font-bold tracking-tight leading-tight">
-              Everything your car and bike needs
+              What to buy for your car and bike — and why
             </h1>
             <p className="mt-3 md:mt-4 max-w-xl text-sm md:text-base text-muted-foreground">
-              Our team picks the essentials worth buying — seat covers, dash cams, care kits, helmets and tools —
-              at the best price we can find, so you never scroll through hundreds of look-alike listings.
+              Every pick comes with a short reason it earned a place on the list. Read the guide, check the
+              latest price at our partner store, and skip the hundreds of look-alike listings.
             </p>
             <div className="mt-5 relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-9 h-11 rounded-xl"
-                placeholder="Search dash cam, seat cover, helmet…"
+                placeholder="Search dash cam, tyre inflator, helmet…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -315,9 +154,12 @@ const ShopPage = () => {
         </section>
       )}
 
+      {/* Editorial buying guides */}
+      <ShopCollections />
+
       {/* Featured */}
       {featured.length > 0 && (
-        <section className="container mx-auto px-4 pt-8">
+        <section className="container mx-auto px-4 pt-4">
           <div className="flex items-center gap-3 mb-4">
             <h2 className="text-lg md:text-2xl font-bold">Top picks this week</h2>
             <div className="flex-1 h-px bg-gradient-to-r from-primary/30 to-transparent" />
@@ -325,7 +167,7 @@ const ShopPage = () => {
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1">
             {featured.map((p) => (
               <div key={p.id} className="w-[46%] sm:w-[240px] shrink-0">
-                <ProductCard p={p} onOpen={setOpen} />
+                <ShopProductCard p={p} />
               </div>
             ))}
           </div>
@@ -371,7 +213,7 @@ const ShopPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {filtered.map((p) => <ProductCard key={p.id} p={p} onOpen={setOpen} />)}
+            {filtered.map((p) => <ShopProductCard key={p.id} p={p} />)}
           </div>
         )}
       </section>
@@ -389,7 +231,6 @@ const ShopPage = () => {
         </div>
       </section>
 
-      <ProductDialog p={open} onClose={() => setOpen(null)} />
       <MarketplaceFooter />
     </div>
   );
