@@ -126,7 +126,7 @@ const ShopProductPage = () => {
   const images = p.images?.length ? p.images : [];
   const store = storeLabel(p.merchant);
 
-  const BuyButton = ({ size = "lg" as const }) => (
+  const BuyButton = ({ size = "lg" }: { size?: "lg" | "default" }) => (
     <Button size={size} className="w-full gap-2" asChild>
       <a
         href={p.buy_url}
