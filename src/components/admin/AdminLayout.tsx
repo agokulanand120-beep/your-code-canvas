@@ -14,7 +14,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Shield, Store, Package, Wrench, LayoutDashboard, Home, ShoppingBag, Inbox, BarChart3, Sparkles, Car, UserPlus, LogOut, Layers, BookOpen } from "lucide-react";
+import { Shield, Store, Package, Wrench, LayoutDashboard, Home, ShoppingBag, Inbox, BarChart3, Sparkles, Car, UserPlus, LogOut, Layers, BookOpen, TrendingUp } from "lucide-react";
 
 const adminItems = [
   { title: "Overview", url: "/admin/marketplace", icon: LayoutDashboard },
@@ -27,6 +27,7 @@ const adminItems = [
   { title: "Services", url: "/admin/services", icon: Wrench },
   { title: "Accessories", url: "/admin/accessories", icon: Package },
   { title: "Products Store", url: "/admin/shop", icon: ShoppingBag },
+  { title: "Store Analytics", url: "/admin/shop-analytics", icon: TrendingUp },
   { title: "Orders", url: "/admin/orders", icon: ShoppingBag },
   { title: "Vehicle Catalogue", url: "/admin/vehicle-catalog", icon: Layers },
   { title: "Model Pages", url: "/admin/model-pages", icon: BookOpen },

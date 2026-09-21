@@ -752,6 +752,14 @@ const PublicVehiclePage = () => {
         </div>
       </div>
 
+      {/* Ownership essentials */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <VehicleAccessoriesSection
+          vehicleType={vehicle.vehicle_type}
+          vehicleName={`${vehicle.brand} ${vehicle.model}`}
+        />
+      </div>
+
       {/* Footer - add bottom padding for sticky CTA */}
       <footer className="border-t border-gray-200 mt-16 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-center">

@@ -43,6 +43,8 @@ const AdminServices = lazy(() => import("./pages/admin/AdminServices"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminAccessories = lazy(() => import("./pages/admin/AdminAccessories"));
 const ShopPage = lazy(() => import("./pages/shop/ShopPage"));
+const ShopProductPage = lazy(() => import("./pages/shop/ShopProductPage"));
+const AdminShopAnalytics = lazy(() => import("./pages/admin/AdminShopAnalytics"));
 const AdminShop = lazy(() => import("./pages/admin/AdminShop"));
 const AdminVehicleCatalog = lazy(() => import("./pages/admin/AdminVehicleCatalog"));
 const AdminModelPages = lazy(() => import("./pages/admin/AdminModelPages"));
@@ -210,7 +212,9 @@ const App = () => (
 
               <Route path="/admin/accessories" element={<SuspenseWrap><AdminLayout><AdminAccessories /></AdminLayout></SuspenseWrap>} />
               <Route path="/shop" element={<SuspenseWrap skeleton={<MarketplaceSkeleton />}><ShopPage /></SuspenseWrap>} />
+              <Route path="/shop/:slug" element={<SuspenseWrap skeleton={<MarketplaceSkeleton />}><ShopProductPage /></SuspenseWrap>} />
               <Route path="/admin/shop" element={<SuspenseWrap><AdminLayout><AdminShop /></AdminLayout></SuspenseWrap>} />
+              <Route path="/admin/shop-analytics" element={<SuspenseWrap><AdminLayout><AdminShopAnalytics /></AdminLayout></SuspenseWrap>} />
               <Route path="/admin/vehicle-catalog" element={<SuspenseWrap><AdminLayout><AdminVehicleCatalog /></AdminLayout></SuspenseWrap>} />
               <Route path="/admin/model-pages" element={<SuspenseWrap><AdminLayout><AdminModelPages /></AdminLayout></SuspenseWrap>} />
               <Route path="/car-loan" element={<SuspenseWrap><CarLoanPage /></SuspenseWrap>} />
