@@ -31,6 +31,7 @@ const emptyProduct = {
   id: "", name: "", slug: "", brand: "", category: "interior", short_description: "", description: "",
   price: "", mrp: "", images: "", highlights: "", rating: "", review_count: "",
   buy_url: "", merchant: "", is_featured: false, is_active: true, sort_order: "0",
+  reason: "", vehicle_types: ["car"] as string[],
 };
 type ProdForm = typeof emptyProduct;
 
@@ -82,7 +83,10 @@ const AdminShop = () => {
       is_featured: !!p.is_featured,
       is_active: !!p.is_active,
       sort_order: String(p.sort_order ?? 0),
+      reason: p.reason || "",
+      vehicle_types: (p.vehicle_types?.length ? p.vehicle_types : ["car"]) as string[],
     });
+
 
   const save = async () => {
     if (!form) return;
