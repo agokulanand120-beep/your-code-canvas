@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { createPublicLead } from "@/lib/leads";
 import ShimmerSkeleton from "@/components/marketplace/ShimmerSkeleton";
+import VehicleAccessoriesSection from "@/components/shop/VehicleAccessoriesSection";
 import { trackPublicEvent } from "@/lib/publicAnalytics";
 import { useScrollTracking } from "@/lib/useScrollTracking";
 import { useAutoLeadPopup } from "@/lib/useAutoLeadPopup";
