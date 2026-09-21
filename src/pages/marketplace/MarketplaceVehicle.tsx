@@ -29,6 +29,7 @@ import { Seo } from "@/components/Seo";
 import DealerCtaPopup from "@/components/marketplace/DealerCtaPopup";
 import DealerVehiclesSection from "@/components/marketplace/DealerVehiclesSection";
 import RelatedVehiclesSection from "@/components/marketplace/RelatedVehiclesSection";
+import VehicleAccessoriesSection from "@/components/shop/VehicleAccessoriesSection";
 import useWishlist from "@/hooks/useWishlist";
 import useRecentlyViewed from "@/hooks/useRecentlyViewed";
 import MarketplaceFooter from "@/components/marketplace/MarketplaceFooter";
@@ -1130,6 +1131,14 @@ const MarketplaceVehicle = () => {
             currentVehicle={vehicle}
             allVehicles={allVehicles}
             getDealerForVehicle={getDealerForVehicle}
+          />
+        )}
+
+        {/* Ownership essentials */}
+        {vehicle && (
+          <VehicleAccessoriesSection
+            vehicleType={vehicle.vehicle_type}
+            vehicleName={`${vehicle.brand} ${vehicle.model}`}
           />
         )}
       </div>

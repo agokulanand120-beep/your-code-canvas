@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { createPublicLead } from "@/lib/leads";
 import ShimmerSkeleton from "@/components/marketplace/ShimmerSkeleton";
+import VehicleAccessoriesSection from "@/components/shop/VehicleAccessoriesSection";
 import { trackPublicEvent } from "@/lib/publicAnalytics";
 import { useScrollTracking } from "@/lib/useScrollTracking";
 import { useAutoLeadPopup } from "@/lib/useAutoLeadPopup";
@@ -750,6 +751,14 @@ const PublicVehiclePage = () => {
             <Send className="h-4 w-4" /> {showEnquiryPanel ? 'Close' : 'Enquiry'}
           </Button>
         </div>
+      </div>
+
+      {/* Ownership essentials */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <VehicleAccessoriesSection
+          vehicleType={vehicle.vehicle_type}
+          vehicleName={`${vehicle.brand} ${vehicle.model}`}
+        />
       </div>
 
       {/* Footer - add bottom padding for sticky CTA */}

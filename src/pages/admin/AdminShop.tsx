@@ -19,7 +19,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, Package, Star, ExternalLink } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
-import { SHOP_CATEGORIES } from "@/pages/shop/ShopPage";
+import { SHOP_CATEGORIES, SHOP_VEHICLE_TYPES } from "@/lib/shopTypes";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -31,6 +31,7 @@ const emptyProduct = {
   id: "", name: "", slug: "", brand: "", category: "interior", short_description: "", description: "",
   price: "", mrp: "", images: "", highlights: "", rating: "", review_count: "",
   buy_url: "", merchant: "", is_featured: false, is_active: true, sort_order: "0",
+  reason: "", vehicle_types: ["car"] as string[],
 };
 type ProdForm = typeof emptyProduct;
 
@@ -82,7 +83,10 @@ const AdminShop = () => {
       is_featured: !!p.is_featured,
       is_active: !!p.is_active,
       sort_order: String(p.sort_order ?? 0),
+      reason: p.reason || "",
+      vehicle_types: (p.vehicle_types?.length ? p.vehicle_types : ["car"]) as string[],
     });
+
 
   const save = async () => {
     if (!form) return;
@@ -108,6 +112,8 @@ const AdminShop = () => {
       is_featured: form.is_featured,
       is_active: form.is_active,
       sort_order: Number(form.sort_order) || 0,
+      reason: form.reason.trim() || null,
+      vehicle_types: form.vehicle_types.length ? form.vehicle_types : ["car"],
     };
     const { error } = form.id
       ? await supabase.from("shop_products").update(payload).eq("id", form.id)
@@ -241,6 +247,40 @@ const AdminShop = () => {
                 <Label>Short description</Label>
                 <Input value={form.short_description} onChange={(e) => setForm({ ...form, short_description: e.target.value })}
                   placeholder="2K front + rear recording with night vision" />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Why we recommend it</Label>
+                <Textarea rows={2} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                  placeholder="Records clear number plates at night — the cheapest insurance against false claims." />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Suits which vehicles</Label>
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {SHOP_VEHICLE_TYPES.map((t) => {
+                    const on = form.vehicle_types.includes(t.slug);
+                    return (
+                      <Button
+                        key={t.slug}
+                        type="button"
+                        size="sm"
+                        variant={on ? "default" : "outline"}
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            vehicle_types: on
+                              ? form.vehicle_types.filter((v) => v !== t.slug)
+                              : [...form.vehicle_types, t.slug],
+                          })
+                        }
+                      >
+                        {t.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Decides where the product shows under matching vehicle listings.
+                </p>
               </div>
               <div className="sm:col-span-2">
                 <Label>Image links (one per line, or comma separated)</Label>
