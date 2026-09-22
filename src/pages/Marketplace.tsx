@@ -13,6 +13,7 @@ import {
 import LocationSelector, { MAJOR_CITIES } from "@/components/marketplace/LocationSelector";
 import MarketplaceTopBar from "@/components/marketplace/MarketplaceTopBar";
 import MarketplaceBottomNav from "@/components/marketplace/MarketplaceBottomNav";
+import HomeSeoIntro from "@/components/marketplace/HomeSeoIntro";
 import useWishlist from "@/hooks/useWishlist";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
