@@ -309,11 +309,11 @@ const Marketplace = () => {
         <div className="container mx-auto px-4 pt-8 pb-4 md:pt-14 md:pb-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center mb-6 md:mb-8">
             <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white leading-tight mb-3">
-              India's Most Trusted<br className="hidden sm:block" />
-              <span className="text-yellow-300"> Used Car & Bike Platform</span>
+              Buy &amp; Sell Verified<br className="hidden sm:block" />
+              <span className="text-yellow-300"> Used Cars &amp; Bikes in India</span>
             </h1>
             <p className="text-blue-100 text-sm md:text-base max-w-lg mx-auto">
-              Buy & sell certified pre-owned vehicles with confidence.
+              Browse pre-owned cars and bikes by brand, model, price, fuel type, transmission and city.
               <br className="hidden sm:block" /> Verified dealers. Transparent deals. Hassle-free experience.
             </p>
           </div>
@@ -787,6 +787,9 @@ const Marketplace = () => {
           </div>
         </div>
       </section>
+
+      {/* ───── CRAWLABLE INTRO + INTERNAL LINKS ───── */}
+      <HomeSeoIntro />
 
       {/* ───── MOBILE BOTTOM NAV ───── */}
       <MarketplaceBottomNav />
