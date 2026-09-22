@@ -89,14 +89,18 @@ const ShopProductCard = ({ p, reason, rank }: Props) => {
         </div>
 
         <div className="mt-auto pt-2 space-y-1.5">
-          <Button size="sm" className="w-full gap-1.5" asChild>
+          <Button size="sm" className="w-full min-w-0 px-2 gap-1.5" asChild>
             <a
               href={p.buy_url}
               target="_blank"
               rel="nofollow sponsored noopener noreferrer"
               onClick={() => trackShopEvent("click", p)}
+              className="min-w-0"
             >
-              Check Price on {storeLabel(p.merchant)} <ExternalLink className="h-3.5 w-3.5" />
+              <span className="truncate">
+                Check Price<span className="hidden sm:inline"> on {storeLabel(p.merchant)}</span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
             </a>
           </Button>
           <Link

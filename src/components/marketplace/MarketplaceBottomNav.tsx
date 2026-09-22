@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Car, Tag, Store, Home } from "lucide-react";
+import { Car, Tag, ShoppingBag, Home } from "lucide-react";
 
 const items = [
   { to: "/", label: "Home", icon: Home, color: "text-blue-600", bg: "bg-blue-50" },
   { to: "/marketplace/vehicles", label: "Vehicles", icon: Car, color: "text-indigo-600", bg: "bg-indigo-50" },
   { to: "/sell-vehicle", label: "Sell", icon: Tag, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { to: "/marketplace/dealers", label: "Dealers", icon: Store, color: "text-purple-600", bg: "bg-purple-50" },
+  { to: "/shop", label: "Shop", icon: ShoppingBag, color: "text-purple-600", bg: "bg-purple-50" },
 ];
 
 /** Mobile bottom navigation for the public marketplace. */
