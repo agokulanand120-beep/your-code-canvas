@@ -57,36 +57,78 @@ const ShopProductPage = () => {
     if (p) trackShopEvent("impression", p);
   }, [p?.id]);
 
-  useEffect(() => {
-    if (!p) return;
-    const title = `${p.name} — Price, Review & Where to Buy | UpcurvHub`;
-    const desc =
-      p.short_description ||
-      p.reason ||
-      `${p.name} — our pick for ${categoryLabel(p.category)}. See the latest price at our partner store.`;
-    document.title = title;
-    const setMeta = (attr: "name" | "property", key: string, content: string) => {
-      let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
-      if (!el) {
-        el = document.createElement("meta");
-        el.setAttribute(attr, key);
-        document.head.appendChild(el);
+  const seoTitle = p
+    ? `${p.name} Price in India — Review, Features & Best Deal | UpcurvHub`
+    : "";
+  const seoDesc = p
+    ? [
+        `${p.name}${p.brand ? ` by ${p.brand}` : ""} — ${formatCurrency(Number(p.price))}.`,
+        p.reason || p.short_description || "",
+        `Read our review of this ${categoryLabel(p.category).toLowerCase()} pick for Indian cars and bikes, then check today's price.`,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .slice(0, 300)
+    : "";
+  const keywords = p
+    ? [
+        p.name,
+        `${p.name} price`,
+        `${p.name} price in india`,
+        `${p.name} review`,
+        `buy ${p.name} online`,
+        p.brand ? `${p.brand} ${categoryLabel(p.category).toLowerCase()}` : "",
+        `best ${categoryLabel(p.category).toLowerCase()} for ${(p.vehicle_types || ["car"]).join(" and ")} in india`,
+        ...(p.vehicle_types || []).map((t) => `${t} accessories online`),
+        "car accessories india",
+        "bike accessories india",
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+  const productSchema = p
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: p.name,
+        description: p.short_description || p.reason || p.description || p.name,
+        image: p.images?.length ? p.images : undefined,
+        brand: p.brand ? { "@type": "Brand", name: p.brand } : undefined,
+        category: categoryLabel(p.category),
+        offers: {
+          "@type": "Offer",
+          url: `https://upcurvhub.upcurv.in/shop/${p.slug}`,
+          priceCurrency: "INR",
+          price: Number(p.price),
+          availability: "https://schema.org/InStock",
+          seller: { "@type": "Organization", name: storeLabel(p.merchant) },
+        },
+        aggregateRating:
+          p.rating != null && p.review_count
+            ? {
+                "@type": "AggregateRating",
+                ratingValue: Number(p.rating),
+                reviewCount: Number(p.review_count),
+              }
+            : undefined,
       }
-      el.setAttribute("content", content);
-    };
-    setMeta("name", "description", desc);
-    setMeta("property", "og:title", title);
-    setMeta("property", "og:description", desc);
-    const url = `https://upcurvhub.upcurv.in/shop/${p.slug}`;
-    setMeta("property", "og:url", url);
-    let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "canonical";
-      document.head.appendChild(link);
-    }
-    link.href = url;
-  }, [p?.id]);
+    : null;
+  const breadcrumbSchema = p
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://upcurvhub.upcurv.in/" },
+          { "@type": "ListItem", position: 2, name: "Store", item: "https://upcurvhub.upcurv.in/shop" },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: p.name,
+            item: `https://upcurvhub.upcurv.in/shop/${p.slug}`,
+          },
+        ],
+      }
+    : null;
 
   if (isLoading) {
     return (
