@@ -27,7 +27,7 @@ export const canonicalPath = (raw: string) => {
   return clean === "" ? "/" : clean;
 };
 
-export const Seo = ({ title, description, path, image, noindex, jsonLd }: SeoProps) => {
+export const Seo = ({ title, description, path, image, noindex, keywords, jsonLd }: SeoProps) => {
   const location = useLocation();
   const url = `${SITE_URL}${canonicalPath(path ?? location.pathname)}`;
   const blocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
@@ -61,6 +61,7 @@ export const Seo = ({ title, description, path, image, noindex, jsonLd }: SeoPro
     <Helmet prioritizeSeoTags>
       <title>{title}</title>
       <meta name="description" content={description} />
+      {keywords ? <meta name="keywords" content={keywords} /> : null}
       <link rel="canonical" href={url} />
       {noindex ? <meta name="robots" content="noindex, follow" /> : null}
       <meta property="og:title" content={title} />
