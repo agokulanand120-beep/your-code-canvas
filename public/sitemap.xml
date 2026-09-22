@@ -283,12 +283,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://upcurvhub.upcurv.in/marketplace/vehicle/hyundai-eon-era-2016-15ab70</loc>
-    <lastmod>2026-09-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/vehicle/yamaha-r15-v4-m-2021-47de93</loc>
     <lastmod>2026-09-15</lastmod>
     <changefreq>weekly</changefreq>
@@ -351,11 +345,6 @@
   </url>
   <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/brand/hyundai/creta</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://upcurvhub.upcurv.in/marketplace/brand/hyundai/eon</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
@@ -504,11 +493,6 @@
   </url>
   <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/vehicles/used-hyundai-creta-in-coimbatore</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://upcurvhub.upcurv.in/marketplace/vehicles/used-hyundai-eon-in-coimbatore</loc>
     <changefreq>daily</changefreq>
     <priority>0.75</priority>
   </url>
