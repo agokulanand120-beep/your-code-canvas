@@ -14,6 +14,8 @@ export interface SeoProps {
   path?: string;
   image?: string;
   noindex?: boolean;
+  /** Comma-separated keyword list for this page. */
+  keywords?: string;
   /** Extra JSON-LD blocks rendered for this page. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
