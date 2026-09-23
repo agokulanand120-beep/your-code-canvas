@@ -470,6 +470,48 @@ export type Database = {
           },
         ]
       }
+      dealer_claims: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          dealer_name: string | null
+          dealer_user_id: string
+          email: string | null
+          full_name: string
+          id: string
+          message: string | null
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          dealer_name?: string | null
+          dealer_user_id: string
+          email?: string | null
+          full_name: string
+          id?: string
+          message?: string | null
+          phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          dealer_name?: string | null
+          dealer_user_id?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          message?: string | null
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dealer_testimonials: {
         Row: {
           created_at: string
@@ -1583,6 +1625,8 @@ export type Database = {
       settings: {
         Row: {
           catalogue_template: string | null
+          claim_status: string
+          claimed_at: string | null
           created_at: string
           currency: string | null
           dealer_address: string | null
@@ -1599,6 +1643,8 @@ export type Database = {
           google_reviews_url: string | null
           id: string
           invoice_prefix: string | null
+          is_admin_managed: boolean
+          managed_source_note: string | null
           marketplace_badge: string | null
           marketplace_description: string | null
           marketplace_enabled: boolean | null
@@ -1634,6 +1680,8 @@ export type Database = {
         }
         Insert: {
           catalogue_template?: string | null
+          claim_status?: string
+          claimed_at?: string | null
           created_at?: string
           currency?: string | null
           dealer_address?: string | null
@@ -1650,6 +1698,8 @@ export type Database = {
           google_reviews_url?: string | null
           id?: string
           invoice_prefix?: string | null
+          is_admin_managed?: boolean
+          managed_source_note?: string | null
           marketplace_badge?: string | null
           marketplace_description?: string | null
           marketplace_enabled?: boolean | null
@@ -1685,6 +1735,8 @@ export type Database = {
         }
         Update: {
           catalogue_template?: string | null
+          claim_status?: string
+          claimed_at?: string | null
           created_at?: string
           currency?: string | null
           dealer_address?: string | null
@@ -1701,6 +1753,8 @@ export type Database = {
           google_reviews_url?: string | null
           id?: string
           invoice_prefix?: string | null
+          is_admin_managed?: boolean
+          managed_source_note?: string | null
           marketplace_badge?: string | null
           marketplace_description?: string | null
           marketplace_enabled?: boolean | null
