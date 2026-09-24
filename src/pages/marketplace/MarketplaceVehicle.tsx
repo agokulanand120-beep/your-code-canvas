@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import DealerClaimNotice from "@/components/marketplace/DealerClaimNotice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -809,6 +810,9 @@ const MarketplaceVehicle = () => {
               </div>
             </Card>
 
+            {dealer?.is_admin_managed && (
+              <DealerClaimNotice dealerUserId={dealer.user_id} dealerName={dealer.dealer_name} sourceNote={dealer.managed_source_note} variant="vehicle" />
+            )}
             {/* Dealer Card - Cars24 Style */}
             {dealer && (
               <Link to={`/marketplace/dealer/${dealer.user_id}`}>

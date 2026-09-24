@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Seo from "@/components/Seo";
+import DealerClaimNotice from "@/components/marketplace/DealerClaimNotice";
 import MarketplaceTopBar from "@/components/marketplace/MarketplaceTopBar";
 import { extractDistrict } from "@/lib/location";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -341,6 +342,11 @@ const MarketplaceDealer = () => {
       />
       {/* Header */}
       <MarketplaceTopBar showBack />
+      {dealer.is_admin_managed && (
+        <div className="container mx-auto px-4 pt-4">
+          <DealerClaimNotice dealerUserId={dealer.user_id} dealerName={dealer.dealer_name} sourceNote={dealer.managed_source_note} variant="dealer" />
+        </div>
+      )}
 
       {/* Dealer Hero */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
