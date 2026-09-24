@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
 import { UserPlus, Loader2, Copy, ShieldCheck, Store } from "lucide-react";
 import { format } from "date-fns";
+import { Switch } from "@/components/ui/switch";
+import DealerProfileFields, { emptyDealerProfile, DealerProfileValues } from "@/components/admin/DealerProfileFields";
 
 const randomPassword = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$";
@@ -29,14 +31,9 @@ const AdminDealerAccounts = () => {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
-  const [form, setForm] = useState({
-    dealerName: "",
-    email: "",
-    password: randomPassword(),
-    phone: "",
-    address: "",
-    plan: "lister" as "lister" | "complete",
-  });
+  const [managed, setManaged] = useState(true);
+  const [profile, setProfile] = useState<DealerProfileValues>(emptyDealerProfile());
+  const [login, setLogin] = useState({ email: "", password: randomPassword() });
 
   const { data: dealers = [], isLoading: loadingDealers } = useQuery({
     queryKey: ["admin-dealer-accounts"],
@@ -44,7 +41,7 @@ const AdminDealerAccounts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("settings")
-        .select("user_id, dealer_name, dealer_email, dealer_phone, dealer_address, plan, marketplace_enabled, marketplace_status, created_at")
+        .select("user_id, dealer_name, dealer_email, dealer_phone, dealer_address, plan, marketplace_enabled, marketplace_status, created_at, is_admin_managed")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -55,33 +52,34 @@ const AdminDealerAccounts = () => {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   const handleCreate = async () => {
-    if (!form.dealerName.trim() || !form.email.trim() || form.password.length < 8) {
-      toast({ title: "Fill dealer name, email and a password of at least 8 characters", variant: "destructive" });
+    if (!profile.dealer_name?.trim()) {
+      toast({ title: "Dealer name is required", variant: "destructive" });
+      return;
+    }
+    if (!managed && (!login.email.trim() || login.password.length < 8)) {
+      toast({ title: "Enter login email and a password of at least 8 characters", variant: "destructive" });
       return;
     }
     setSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-create-dealer", {
-        body: {
-          dealer_name: form.dealerName.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          phone: form.phone.trim(),
-          address: form.address.trim(),
-          plan: form.plan,
-        },
-      });
+      const body: any = { ...profile, dealer_name: profile.dealer_name.trim(), managed };
+      body.google_reviews_rating = profile.google_reviews_rating === "" ? null : Number(profile.google_reviews_rating);
+      body.google_reviews_count = profile.google_reviews_count === "" ? null : Number(profile.google_reviews_count);
+      if (!managed) { body.email = login.email.trim(); body.password = login.password; }
+      const { data, error } = await supabase.functions.invoke("admin-create-dealer", { body });
       if (error) {
         const details = "context" in error ? await (error as any).context.text() : error.message;
         throw new Error(details);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      setCreated({ email: form.email.trim(), password: form.password });
+      if (!managed) setCreated({ email: login.email.trim(), password: login.password });
       setOpen(false);
-      setForm({ dealerName: "", email: "", password: randomPassword(), phone: "", address: "", plan: "lister" });
+      setProfile(emptyDealerProfile());
+      setLogin({ email: "", password: randomPassword() });
       qc.invalidateQueries({ queryKey: ["admin-dealer-accounts"] });
-      toast({ title: "Dealer account created" });
+      toast({ title: managed ? "Managed dealer profile created" : "Dealer account created" });
+      if ((data as any)?.user_id) window.location.assign(`/admin/dealer-accounts/${(data as any).user_id}`);
     } catch (e: any) {
       toast({ title: "Could not create dealer", description: e.message, variant: "destructive" });
     } finally {
@@ -169,6 +167,7 @@ const AdminDealerAccounts = () => {
                     <Link to={`/admin/dealer-accounts/${d.user_id}`} className="text-primary hover:underline">
                       {d.dealer_name || "—"}
                     </Link>
+                    {d.is_admin_managed && <Badge variant="outline" className="ml-2 text-[10px]">Managed</Badge>}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{d.dealer_email || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{d.dealer_phone || "—"}</TableCell>
@@ -198,47 +197,32 @@ const AdminDealerAccounts = () => {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create dealer account</DialogTitle>
-            <DialogDescription>The dealer can sign in immediately with these credentials.</DialogDescription>
+            <DialogTitle>Create dealer profile</DialogTitle>
+            <DialogDescription>Fill the dealer's details. A managed profile is run by you until the owner claims it.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="d-name">Dealer / shop name *</Label>
-              <Input id="d-name" value={form.dealerName} maxLength={150} onChange={(e) => setForm({ ...form, dealerName: e.target.value })} />
-            </div>
-            <div>
-              <Label htmlFor="d-email">Email *</Label>
-              <Input id="d-email" type="email" value={form.email} maxLength={255} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </div>
-            <div>
-              <Label htmlFor="d-pass">Password *</Label>
-              <div className="flex gap-2">
-                <Input id="d-pass" value={form.password} maxLength={72} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                <Button type="button" variant="outline" onClick={() => setForm({ ...form, password: randomPassword() })}>New</Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
-                <Label htmlFor="d-phone">Phone</Label>
-                <Input id="d-phone" value={form.phone} maxLength={20} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <p className="text-sm font-medium">Managed by admin (no dealer login yet)</p>
+                <p className="text-xs text-muted-foreground">Shows a "Claim this business" notice on their pages.</p>
               </div>
-              <div>
-                <Label>Plan</Label>
-                <Select value={form.plan} onValueChange={(v: "lister" | "complete") => setForm({ ...form, plan: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lister">Lister (listing only)</SelectItem>
-                    <SelectItem value="complete">Complete (full suite)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Switch checked={managed} onCheckedChange={setManaged} />
+            </div>
+            {!managed && (
+              <div className="grid md:grid-cols-2 gap-3">
+                <div><Label>Login email *</Label><Input type="email" value={login.email} maxLength={255} onChange={(e) => setLogin({ ...login, email: e.target.value })} /></div>
+                <div>
+                  <Label>Password *</Label>
+                  <div className="flex gap-2">
+                    <Input value={login.password} maxLength={72} onChange={(e) => setLogin({ ...login, password: e.target.value })} />
+                    <Button type="button" variant="outline" onClick={() => setLogin({ ...login, password: randomPassword() })}>New</Button>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <Label htmlFor="d-addr">Address</Label>
-              <Input id="d-addr" value={form.address} maxLength={250} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-            </div>
+            )}
+            <DealerProfileFields value={profile} onChange={setProfile} showManagedNote={managed} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
