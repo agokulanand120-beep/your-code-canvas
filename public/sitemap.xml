@@ -289,6 +289,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://upcurvhub.upcurv.in/marketplace/vehicle/toyota-innova-2014-8f2702</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/brand/honda</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -305,6 +311,11 @@
   </url>
   <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/brand/maruti-suzuki</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://upcurvhub.upcurv.in/marketplace/brand/toyota</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
@@ -374,6 +385,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://upcurvhub.upcurv.in/marketplace/brand/toyota/innova</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/brand/tvs/jupiter-110</loc>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -408,12 +424,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://upcurvhub.upcurv.in/marketplace/dealer/cars7-8380ae</loc>
-    <lastmod>2026-09-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/dealer/sabari-s-cars-76c4e3</loc>
     <lastmod>2026-08-15</lastmod>
     <changefreq>weekly</changefreq>
@@ -424,6 +434,12 @@
     <lastmod>2026-08-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://upcurvhub.upcurv.in/marketplace/dealer/cars7-8380ae</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://upcurvhub.upcurv.in/marketplace/dealer/ug-automobiles-6c157e</loc>
