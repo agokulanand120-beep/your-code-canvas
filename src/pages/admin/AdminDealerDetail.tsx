@@ -19,11 +19,14 @@ import MarketplaceAnalytics from "@/pages/MarketplaceAnalytics";
 import PublicPageAnalytics from "@/pages/PublicPageAnalytics";
 import DealerProfileFields, { DealerProfileValues } from "@/components/admin/DealerProfileFields";
 import { formatCurrency } from "@/lib/formatters";
+import { getBrandsForType, getModelsForBrand, getVariantsForModel, vehicleColors } from "@/lib/vehicleData";
+import { loadVehicleCatalogOverlay } from "@/lib/vehicleCatalog";
+import { Textarea } from "@/components/ui/textarea";
 
 type Tab = "profile" | "inventory" | "leads" | "claims" | "catalogue" | "marketplace";
 
 const PROFILE_KEYS = [
-  "dealer_name","shop_tagline","dealer_tag","dealer_phone","whatsapp_number","dealer_email","dealer_address","dealer_gst",
+  "dealer_name","shop_tagline","dealer_tag","dealer_phone","whatsapp_number","dealer_email","dealer_address","dealer_city","dealer_state","dealer_pincode","dealer_gst",
   "gmap_link","shop_logo_url","marketplace_tagline","marketplace_description","marketplace_working_hours","marketplace_badge",
   "google_reviews_rating","google_reviews_count","google_reviews_url","managed_source_note","seo_title","seo_description",
   "plan","marketplace_enabled","marketplace_status","marketplace_featured",
@@ -32,7 +35,7 @@ const PROFILE_KEYS = [
 const emptyVehicle = {
   vehicle_type: "car", brand: "", model: "", variant: "", manufacturing_year: "", fuel_type: "petrol",
   transmission: "manual", odometer_reading: "", selling_price: "", color: "", registration_number: "",
-  number_of_owners: "1", public_description: "",
+  number_of_owners: "1", public_description: "", highlights: "", features: "",
 };
 
 const AdminDealerDetail = () => {
@@ -59,6 +62,11 @@ const AdminDealerDetail = () => {
       return data as any;
     },
   });
+
+  useEffect(() => { loadVehicleCatalogOverlay(); }, []);
+  useEffect(() => {
+    if (dealer && !dealer.is_admin_managed) setTab("marketplace");
+  }, [dealer?.is_admin_managed]);
 
   useEffect(() => {
     if (dealer) {
@@ -126,6 +134,9 @@ const AdminDealerDetail = () => {
     Object.keys(patch).forEach((k) => { if (patch[k] === "") patch[k] = null; });
     patch.dealer_name = profile.dealer_name.trim();
     patch.plan = profile.plan || "lister";
+    if (patch.dealer_city && !String(patch.dealer_address || "").toLowerCase().includes(String(patch.dealer_city).toLowerCase())) {
+      patch.dealer_address = [patch.dealer_address, patch.dealer_city, patch.dealer_state].filter(Boolean).join(", ") + (patch.dealer_pincode ? ` - ${patch.dealer_pincode}` : "");
+    }
     const { error } = await supabase.from("settings").update(patch).eq("user_id", userId!);
     setSavingProfile(false);
     if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
@@ -160,6 +171,8 @@ const AdminDealerDetail = () => {
           registration_number: veh.registration_number.trim() || null,
           number_of_owners: num(veh.number_of_owners),
           public_description: veh.public_description.trim() || null,
+          public_highlights: veh.highlights.split(/\n|,/).map((x: string) => x.trim()).filter(Boolean),
+          public_features: veh.features.split(/\n|,/).map((x: string) => x.trim()).filter(Boolean),
           status: "in_stock",
           is_public: true,
           marketplace_status: "approved",
@@ -241,11 +254,14 @@ const AdminDealerDetail = () => {
   };
 
   const newClaims = claims.filter((c: any) => c.status === "new").length;
+  const managed = !!dealer?.is_admin_managed;
   const tabs = [
-    { id: "profile" as Tab, label: "Profile", icon: User },
-    { id: "inventory" as Tab, label: `Inventory (${vehicles.length})`, icon: Car },
-    { id: "leads" as Tab, label: "Leads", icon: Inbox },
-    { id: "claims" as Tab, label: `Claims${newClaims ? ` (${newClaims})` : ""}`, icon: Flag },
+    ...(managed ? [
+      { id: "profile" as Tab, label: "Profile", icon: User },
+      { id: "inventory" as Tab, label: `Inventory (${vehicles.length})`, icon: Car },
+      { id: "leads" as Tab, label: "Leads", icon: Inbox },
+      { id: "claims" as Tab, label: `Claims${newClaims ? ` (${newClaims})` : ""}`, icon: Flag },
+    ] : []),
     { id: "catalogue" as Tab, label: "Catalogue Analytics", icon: Globe },
     { id: "marketplace" as Tab, label: "Marketplace Analytics", icon: BarChart3 },
   ];
@@ -291,7 +307,7 @@ const AdminDealerDetail = () => {
         ))}
       </div>
 
-      {tab === "profile" && profile && (
+      {managed && tab === "profile" && profile && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Dealer profile</CardTitle>
@@ -308,7 +324,7 @@ const AdminDealerDetail = () => {
         </Card>
       )}
 
-      {tab === "inventory" && (
+      {managed && tab === "inventory" && (
         <Card>
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-base">Inventory</CardTitle>
@@ -355,7 +371,7 @@ const AdminDealerDetail = () => {
         </Card>
       )}
 
-      {tab === "leads" && (
+      {managed && tab === "leads" && (
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Leads received ({leads.length})</CardTitle></CardHeader>
           <CardContent className="p-0 overflow-x-auto">
@@ -387,7 +403,7 @@ const AdminDealerDetail = () => {
         </Card>
       )}
 
-      {tab === "claims" && (
+      {managed && tab === "claims" && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Ownership claims</CardTitle>
@@ -449,14 +465,49 @@ const AdminDealerDetail = () => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Type</Label>
-              <Select value={veh.vehicle_type} onValueChange={(v) => setVeh({ ...veh, vehicle_type: v })}>
+              <Select value={veh.vehicle_type} onValueChange={(v) => setVeh({ ...veh, vehicle_type: v, brand: "", model: "", variant: "" })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="car">Car</SelectItem><SelectItem value="bike">Bike</SelectItem></SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Brand *</Label>
+              <Select value={veh.brand || undefined} onValueChange={(v) => setVeh({ ...veh, brand: v, model: "", variant: "" })}>
+                <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
+                <SelectContent>{getBrandsForType(veh.vehicle_type).map((b) => <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Model *</Label>
+              <Select value={veh.model || undefined} disabled={!veh.brand} onValueChange={(v) => setVeh({ ...veh, model: v, variant: "" })}>
+                <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                <SelectContent>{getModelsForBrand(veh.vehicle_type, veh.brand).map((m) => <SelectItem key={m.name} value={m.name}>{m.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Variant</Label>
+              {(() => {
+                const vs = veh.model ? getVariantsForModel(veh.vehicle_type, veh.brand, veh.model) : [];
+                return vs.length ? (
+                  <Select value={veh.variant || undefined} onValueChange={(v) => setVeh({ ...veh, variant: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select variant" /></SelectTrigger>
+                    <SelectContent>{vs.map((x) => <SelectItem key={x.name} value={x.name}>{x.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={veh.variant} disabled={!veh.model} onChange={(e) => setVeh({ ...veh, variant: e.target.value })} />
+                );
+              })()}
+            </div>
+            <div>
+              <Label>Colour</Label>
+              <Select value={veh.color || undefined} onValueChange={(v) => setVeh({ ...veh, color: v })}>
+                <SelectTrigger><SelectValue placeholder="Select colour" /></SelectTrigger>
+                <SelectContent>{Array.from(new Set(vehicleColors.map((c) => c.name))).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
             {([
-              ["brand", "Brand *"], ["model", "Model *"], ["variant", "Variant"], ["manufacturing_year", "Year"],
-              ["odometer_reading", "KM driven"], ["selling_price", "Price (₹)"], ["color", "Colour"],
+              ["manufacturing_year", "Year"],
+              ["odometer_reading", "KM driven"], ["selling_price", "Price (₹)"],
               ["registration_number", "Registration no."], ["number_of_owners", "Owners"],
             ] as const).map(([k, l]) => (
               <div key={k}>
@@ -487,6 +538,14 @@ const AdminDealerDetail = () => {
             <div className="col-span-2">
               <Label>Description</Label>
               <Input value={veh.public_description} maxLength={1000} onChange={(e) => setVeh({ ...veh, public_description: e.target.value })} />
+            </div>
+            <div className="col-span-2">
+              <Label>Highlights (one per line)</Label>
+              <Textarea rows={3} placeholder={"Single owner\nFull service history"} value={veh.highlights} onChange={(e) => setVeh({ ...veh, highlights: e.target.value })} />
+            </div>
+            <div className="col-span-2">
+              <Label>Features (one per line)</Label>
+              <Textarea rows={3} placeholder={"Touchscreen infotainment\nReverse camera\nAirbags"} value={veh.features} onChange={(e) => setVeh({ ...veh, features: e.target.value })} />
             </div>
             <div className="col-span-2">
               <Label>Photos</Label>

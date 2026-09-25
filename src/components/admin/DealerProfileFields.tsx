@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { INDIAN_STATES } from "@/lib/location";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type DealerProfileValues = Record<string, any>;
@@ -14,6 +15,9 @@ export const emptyDealerProfile = (): DealerProfileValues => ({
   whatsapp_number: "",
   dealer_email: "",
   dealer_address: "",
+  dealer_city: "",
+  dealer_state: "Tamil Nadu",
+  dealer_pincode: "",
   dealer_gst: "",
   gmap_link: "",
   shop_logo_url: "",
@@ -83,7 +87,24 @@ const DealerProfileFields = ({ value, onChange, showManagedNote = true }: Props)
           </div>
           <div className="md:col-span-2">
             <Label>Address</Label>
-            <Input value={txt("dealer_address")} maxLength={300} onChange={(e) => set("dealer_address", e.target.value)} />
+            <Input value={txt("dealer_address")} maxLength={300} placeholder="Door no, street, area" onChange={(e) => set("dealer_address", e.target.value)} />
+          </div>
+          <div>
+            <Label>City *</Label>
+            <Input value={txt("dealer_city")} maxLength={80} placeholder="e.g. Tiruppur" onChange={(e) => set("dealer_city", e.target.value)} />
+          </div>
+          <div>
+            <Label>State</Label>
+            <Select value={value.dealer_state || undefined} onValueChange={(v) => set("dealer_state", v)}>
+              <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+              <SelectContent>
+                {INDIAN_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Pincode</Label>
+            <Input inputMode="numeric" value={txt("dealer_pincode")} maxLength={6} onChange={(e) => set("dealer_pincode", e.target.value.replace(/\D/g, ""))} />
           </div>
           <div>
             <Label>Google Maps link</Label>

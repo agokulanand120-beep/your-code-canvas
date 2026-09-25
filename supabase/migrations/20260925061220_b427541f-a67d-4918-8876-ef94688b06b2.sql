@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN IF NOT EXISTS dealer_city text, ADD COLUMN IF NOT EXISTS dealer_state text, ADD COLUMN IF NOT EXISTS dealer_pincode text;

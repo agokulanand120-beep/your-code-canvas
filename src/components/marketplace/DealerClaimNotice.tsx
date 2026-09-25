@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Info, BadgeCheck, Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 
 interface Props {
   dealerUserId: string;
@@ -57,29 +57,15 @@ const DealerClaimNotice = ({ dealerUserId, dealerName, sourceNote, variant = "de
 
   return (
     <>
-      <div
-        className={
-          variant === "dealer"
-            ? "rounded-2xl border border-amber-300 bg-amber-50 p-4 md:p-5 shadow-sm"
-            : "rounded-2xl border border-amber-300 bg-amber-50 p-4"
-        }
-      >
-        <div className="flex items-start gap-3">
-          <div className="h-9 w-9 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-            <Info className="h-5 w-5 text-amber-700" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-amber-900 flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4" /> Profile maintained by UpcurvHub
-            </p>
-            <p className="text-sm text-amber-800 mt-1">{note}</p>
-            <Button
-              size="sm"
-              className="mt-3 bg-amber-600 hover:bg-amber-700 text-white"
-              onClick={() => setOpen(true)}
-            >
+      <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2.5">
+        <div className="flex items-start gap-2">
+          <Info className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1 text-xs text-amber-900">
+            <span className="font-semibold">Profile maintained by UpcurvHub.</span>{" "}
+            <span className="text-amber-800">{note}</span>{" "}
+            <button type="button" onClick={() => setOpen(true)} className="font-semibold underline underline-offset-2 hover:text-amber-700">
               Is this your business? Claim it
-            </Button>
+            </button>
           </div>
         </div>
       </div>
