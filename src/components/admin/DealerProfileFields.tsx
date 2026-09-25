@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { INDIAN_STATES } from "@/lib/location";
+import { citiesForState } from "@/lib/stateCities";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type DealerProfileValues = Record<string, any>;
@@ -90,17 +91,38 @@ const DealerProfileFields = ({ value, onChange, showManagedNote = true }: Props)
             <Input value={txt("dealer_address")} maxLength={300} placeholder="Door no, street, area" onChange={(e) => set("dealer_address", e.target.value)} />
           </div>
           <div>
-            <Label>City *</Label>
-            <Input value={txt("dealer_city")} maxLength={80} placeholder="e.g. Tiruppur" onChange={(e) => set("dealer_city", e.target.value)} />
-          </div>
-          <div>
             <Label>State</Label>
-            <Select value={value.dealer_state || undefined} onValueChange={(v) => set("dealer_state", v)}>
+            <Select value={value.dealer_state || undefined} onValueChange={(v) => onChange({ ...value, dealer_state: v, dealer_city: "" })}>
               <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
               <SelectContent>
                 {INDIAN_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label>City *</Label>
+            {(() => {
+              const cities = citiesForState(value.dealer_state);
+              const cur = txt("dealer_city");
+              const isOther = cur !== "" && !cities.includes(cur);
+              if (cities.length === 0) {
+                return <Input value={cur} maxLength={80} placeholder="Enter city" onChange={(e) => set("dealer_city", e.target.value)} />;
+              }
+              return (
+                <div className="space-y-2">
+                  <Select value={isOther ? "__other" : cur || undefined} onValueChange={(v) => set("dealer_city", v === "__other" ? " " : v)}>
+                    <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
+                    <SelectContent>
+                      {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      <SelectItem value="__other">Other (type it)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isOther && (
+                    <Input value={cur.trimStart()} maxLength={80} placeholder="Enter city" onChange={(e) => set("dealer_city", e.target.value || " ")} />
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div>
             <Label>Pincode</Label>
