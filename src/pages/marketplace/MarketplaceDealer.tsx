@@ -342,11 +342,6 @@ const MarketplaceDealer = () => {
       />
       {/* Header */}
       <MarketplaceTopBar showBack />
-      {dealer.is_admin_managed && (
-        <div className="container mx-auto px-4 pt-4">
-          <DealerClaimNotice dealerUserId={dealer.user_id} dealerName={dealer.dealer_name} sourceNote={dealer.managed_source_note} variant="dealer" />
-        </div>
-      )}
 
       {/* Dealer Hero */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
@@ -492,6 +487,10 @@ const MarketplaceDealer = () => {
                 </div>
               </Card>
             </div>
+
+            {dealer.is_admin_managed && (
+              <DealerClaimNotice dealerUserId={dealer.user_id} dealerName={dealer.dealer_name} sourceNote={dealer.managed_source_note} variant="vehicle" />
+            )}
 
             {/* Description */}
             {dealer.marketplace_description && (

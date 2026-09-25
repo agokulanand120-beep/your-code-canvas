@@ -8,6 +8,9 @@ const corsHeaders = {
 
 const PROFILE_FIELDS = [
   "dealer_name",
+  "dealer_city",
+  "dealer_state",
+  "dealer_pincode",
   "dealer_phone",
   "dealer_email",
   "dealer_address",
@@ -111,6 +114,9 @@ Deno.serve(async (req) => {
     for (const f of PROFILE_FIELDS) {
       const v = body[f];
       if (typeof v === "string") patch[f] = v.trim() || null;
+    }
+    if (patch.dealer_city && !String(patch.dealer_address || "").toLowerCase().includes(String(patch.dealer_city).toLowerCase())) {
+      patch.dealer_address = [patch.dealer_address, patch.dealer_city, patch.dealer_state].filter(Boolean).join(", ") + (patch.dealer_pincode ? ` - ${patch.dealer_pincode}` : "");
     }
     if (!managed) patch.dealer_email = email;
     if (body.google_reviews_rating != null) patch.google_reviews_rating = Number(body.google_reviews_rating) || null;
