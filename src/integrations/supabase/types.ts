@@ -1630,11 +1630,14 @@ export type Database = {
           created_at: string
           currency: string | null
           dealer_address: string | null
+          dealer_city: string | null
           dealer_email: string | null
           dealer_gst: string | null
           dealer_name: string | null
           dealer_phone: string | null
+          dealer_pincode: string | null
           dealer_slug: string | null
+          dealer_state: string | null
           dealer_tag: string | null
           enable_auto_lead_popup: boolean | null
           gmap_link: string | null
@@ -1685,11 +1688,14 @@ export type Database = {
           created_at?: string
           currency?: string | null
           dealer_address?: string | null
+          dealer_city?: string | null
           dealer_email?: string | null
           dealer_gst?: string | null
           dealer_name?: string | null
           dealer_phone?: string | null
+          dealer_pincode?: string | null
           dealer_slug?: string | null
+          dealer_state?: string | null
           dealer_tag?: string | null
           enable_auto_lead_popup?: boolean | null
           gmap_link?: string | null
@@ -1740,11 +1746,14 @@ export type Database = {
           created_at?: string
           currency?: string | null
           dealer_address?: string | null
+          dealer_city?: string | null
           dealer_email?: string | null
           dealer_gst?: string | null
           dealer_name?: string | null
           dealer_phone?: string | null
+          dealer_pincode?: string | null
           dealer_slug?: string | null
+          dealer_state?: string | null
           dealer_tag?: string | null
           enable_auto_lead_popup?: boolean | null
           gmap_link?: string | null
